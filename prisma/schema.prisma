@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  cognitoId String?  @unique @map("cognito_id")
+  siteRole  String   @default("USER") @map("site_role")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  guessSessions GuessSession[]
+
+  @@map("users")
+}
+
+model Movie {
+  id          String   @id @default(uuid())
+  tmdbId      Int      @unique @map("tmdb_id")
+  title       String
+  releaseYear Int?     @map("release_year")
+  overview    String?
+  popularity  Float?
+  voteAverage Float?   @map("vote_average")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  credits    MovieCredit[]
+  images     MovieImage[]
+  challenges DailyChallenge[]
+
+  @@map("movies")
+}
+
+model MovieCredit {
+  id         String @id @default(uuid())
+  movieId    String @map("movie_id")
+  personName String @map("person_name")
+  role       String // ACTOR, DIRECTOR, WRITER
+  character  String? // for actors, the character name
+  tmdbPersonId Int? @map("tmdb_person_id")
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  imageActors ImageActor[]
+
+  @@unique([movieId, tmdbPersonId, role])
+  @@map("movie_credits")
+}
+
+model MovieImage {
+  id           String  @id @default(uuid())
+  movieId      String  @map("movie_id")
+  tmdbFilePath String  @map("tmdb_file_path")
+  width        Int?
+  height       Int?
+  aspectRatio  Float?  @map("aspect_ratio")
+  isCurated    Boolean @default(false) @map("is_curated")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  movie            Movie           @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  challengesAs1    DailyChallenge[] @relation("ChallengeImage1")
+  challengesAs2    DailyChallenge[] @relation("ChallengeImage2")
+  challengesAs3    DailyChallenge[] @relation("ChallengeImage3")
+  imageActors      ImageActor[]
+  stats       ImageStats?
+
+  @@unique([movieId, tmdbFilePath])
+  @@map("movie_images")
+}
+
+// Join table: which actors are actually visible in a specific image (for curated images)
+model ImageActor {
+  id        String @id @default(uuid())
+  imageId   String @map("image_id")
+  creditId  String @map("credit_id")
+
+  image  MovieImage  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  credit MovieCredit @relation(fields: [creditId], references: [id], onDelete: Cascade)
+
+  @@unique([imageId, creditId])
+  @@map("image_actors")
+}
+
+model DailyChallenge {
+  id        String   @id @default(uuid())
+  date      DateTime @unique @db.Date
+  movieId   String   @map("movie_id")
+  image1Id  String   @map("image1_id")
+  image2Id  String   @map("image2_id")
+  image3Id  String   @map("image3_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  movie    Movie          @relation(fields: [movieId], references: [id])
+  image1   MovieImage     @relation("ChallengeImage1", fields: [image1Id], references: [id])
+  image2   MovieImage     @relation("ChallengeImage2", fields: [image2Id], references: [id])
+  image3   MovieImage     @relation("ChallengeImage3", fields: [image3Id], references: [id])
+  sessions GuessSession[]
+
+  @@map("daily_challenges")
+}
+
+model GuessSession {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  dailyChallengeId String    @map("daily_challenge_id")
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  score            Int       @default(0)
+  currentImageIndex Int      @default(0) @map("current_image_index") // 0, 1, or 2
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge DailyChallenge @relation(fields: [dailyChallengeId], references: [id], onDelete: Cascade)
+  guesses   Guess[]
+
+  @@unique([userId, dailyChallengeId])
+  @@map("guess_sessions")
+}
+
+model Guess {
+  id              String   @id @default(uuid())
+  sessionId       String   @map("session_id")
+  guessText       String   @map("guess_text")
+  matchedCategory String?  @map("matched_category") // TITLE, DIRECTOR, ACTOR, WRITER, or null
+  matchedValue    String?  @map("matched_value") // what it matched against
+  isCorrect       Boolean  @default(false) @map("is_correct")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  session GuessSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("guesses")
+}
+
+model ImageStats {
+  id              String @id @default(uuid())
+  imageId         String @unique @map("image_id")
+  timesShown      Int    @default(0) @map("times_shown")
+  totalGuesses    Int    @default(0) @map("total_guesses")
+  correctGuesses  Int    @default(0) @map("correct_guesses")
+  avgGuessTimeSec Float? @map("avg_guess_time_sec")
+  difficultyScore Float? @map("difficulty_score")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  image MovieImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@map("image_stats")
+}
