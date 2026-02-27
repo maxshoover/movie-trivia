@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -89,7 +89,7 @@ model ImageActor {
 
 model DailyChallenge {
   id        String   @id @default(uuid())
-  date      DateTime @unique @db.Date
+  date      DateTime @unique
   movieId   String   @map("movie_id")
   image1Id  String   @map("image1_id")
   image2Id  String   @map("image2_id")

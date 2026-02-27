@@ -108,7 +108,7 @@ exports.handler = async (event) => {
 
         // Upsert backdrop images (filter for landscape backdrops)
         const backdrops = images.backdrops.filter(
-          (b) => b.width >= 1280 && b.aspect_ratio > 1.5
+          (b) => b.width >= 1280 && b.aspect_ratio > 1.5 && b.iso_639_1 === null
         );
 
         for (const backdrop of backdrops) {

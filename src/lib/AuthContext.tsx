@@ -1,9 +1,23 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { signIn, signUp, signOut, getCurrentUser, fetchUserAttributes, confirmSignUp } from "aws-amplify/auth";
 import { authFetch } from "@/lib/authFetch";
-import "@/lib/amplifyConfig";
+
+const isDev = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true";
+
+// Only import Amplify/Cognito in production
+let signIn: Function, signUp: Function, signOut: Function, getCurrentUser: Function, fetchUserAttributes: Function, confirmSignUp: Function;
+if (!isDev) {
+  import("aws-amplify/auth").then((mod) => {
+    signIn = mod.signIn;
+    signUp = mod.signUp;
+    signOut = mod.signOut;
+    getCurrentUser = mod.getCurrentUser;
+    fetchUserAttributes = mod.fetchUserAttributes;
+    confirmSignUp = mod.confirmSignUp;
+  });
+  import("@/lib/amplifyConfig");
+}
 
 export interface AppUser {
   id: string;
@@ -26,6 +40,17 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function cognitoUserToAppUser(): Promise<AppUser | null> {
+  // Dev mode: auto-authenticate as dev user
+  if (isDev) {
+    return {
+      id: "dev-local-user",
+      name: "Dev Player",
+      email: "dev@flickpick.local",
+      siteRole: "ADMIN",
+      createdAt: new Date(),
+    };
+  }
+
   try {
     const cognitoUser = await getCurrentUser();
     const attributes = await fetchUserAttributes();

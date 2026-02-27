@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
     penaltyApplied: REVEAL_PENALTY,
     newImage: {
       ...newImage,
-      imageUrl: `${TMDB_IMAGE_BASE}${newImage.tmdbFilePath}`,
+      imageUrl: newImage.tmdbFilePath.startsWith("http")
+        ? newImage.tmdbFilePath
+        : `${TMDB_IMAGE_BASE}${newImage.tmdbFilePath}`,
     },
   });
 }

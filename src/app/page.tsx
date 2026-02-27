@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/AuthContext";
 import { authFetch } from "@/lib/authFetch";
 
 interface GuessResult {
@@ -42,7 +41,6 @@ interface Answers {
 }
 
 export default function GamePage() {
-  const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [guesses, setGuesses] = useState<GuessResult[]>([]);
   const [guessInput, setGuessInput] = useState("");
@@ -87,9 +85,8 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn) loadChallenge();
-    else if (!authLoading) setLoading(false);
-  }, [isLoggedIn, authLoading, loadChallenge]);
+    loadChallenge();
+  }, [loadChallenge]);
 
   const submitGuess = async () => {
     if (!challenge || !guessInput.trim() || isSubmitting) return;
@@ -158,7 +155,7 @@ export default function GamePage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
         <p className="text-lg">Loading...</p>
@@ -166,26 +163,10 @@ export default function GamePage() {
     );
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white gap-6">
-        <h1 className="text-5xl font-bold">🎬 Flick Pick</h1>
-        <p className="text-xl text-gray-400">The daily movie guessing game</p>
-        <p className="text-gray-500">Sign in to play today&apos;s challenge</p>
-        <a
-          href="/login"
-          className="px-6 py-3 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition"
-        >
-          Sign In
-        </a>
-      </div>
-    );
-  }
-
   if (error && !challenge) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white gap-4">
-        <h1 className="text-4xl font-bold">🎬 Flick Pick</h1>
+        <h1 className="text-4xl font-bold">🎬 Flick Pics</h1>
         <p className="text-gray-400">{error}</p>
       </div>
     );
@@ -197,9 +178,8 @@ export default function GamePage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">🎬 Flick Pick</h1>
+        <h1 className="text-2xl font-bold">🎬 Flick Pics</h1>
         <div className="flex items-center gap-4">
-          <span className="text-gray-400">{user?.name}</span>
           <span className="text-amber-400 font-semibold">Score: {score}</span>
         </div>
       </header>

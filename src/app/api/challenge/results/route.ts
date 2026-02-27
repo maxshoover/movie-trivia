@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "challengeId required" }, { status: 400 });
   }
 
-  // Verify user has a completed session (or allow viewing after giving up)
-  const session = await prisma.guessSession.findUnique({
+  // Get or create session so results work even with no guesses
+  let session = await prisma.guessSession.findUnique({
     where: {
       userId_dailyChallengeId: {
         userId: authUser.userId,
@@ -29,7 +29,25 @@ export async function GET(req: NextRequest) {
   });
 
   if (!session) {
-    return NextResponse.json({ error: "No session found" }, { status: 404 });
+    session = await prisma.guessSession.create({
+      data: {
+        userId: authUser.userId,
+        dailyChallengeId: challengeId,
+        completedAt: new Date(),
+      },
+      include: {
+        guesses: { orderBy: { createdAt: "asc" } },
+      },
+    });
+  } else if (!session.completedAt) {
+    // Mark as completed on give-up
+    session = await prisma.guessSession.update({
+      where: { id: session.id },
+      data: { completedAt: new Date() },
+      include: {
+        guesses: { orderBy: { createdAt: "asc" } },
+      },
+    });
   }
 
   const challenge = await prisma.dailyChallenge.findUnique({

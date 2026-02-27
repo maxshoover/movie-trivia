@@ -58,7 +58,9 @@ export async function GET(req: NextRequest) {
   const allImages = [challenge.image1, challenge.image2, challenge.image3];
   const revealedImages = allImages.slice(0, currentImageIndex + 1).map((img) => ({
     ...img,
-    imageUrl: `${TMDB_IMAGE_BASE}${img.tmdbFilePath}`,
+    imageUrl: img.tmdbFilePath.startsWith("http")
+      ? img.tmdbFilePath
+      : `${TMDB_IMAGE_BASE}${img.tmdbFilePath}`,
   }));
 
   return NextResponse.json({

@@ -65,7 +65,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white px-4">
-      <h1 className="text-4xl font-bold mb-2">🎬 Flick Pick</h1>
+      <h1 className="text-4xl font-bold mb-2">🎬 Flick Pics</h1>
       <p className="text-gray-400 mb-8">The daily movie guessing game</p>
 
       <div className="w-full max-w-md bg-gray-900 rounded-xl p-6 border border-gray-800">
